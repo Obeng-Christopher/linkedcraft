@@ -57,7 +57,7 @@ const CalendarPage = () => {
       time: '10:00',
       title: 'Product Update',
       type: 'content',
-      content: 'Exciting news! We're launching a new feature that will revolutionize how you manage your content. This post details the benefits, use cases, and how to get started with our latest innovation.'
+      content: "Exciting news! We're launching a new feature that will revolutionize how you manage your content. This post details the benefits, use cases, and how to get started with our latest innovation."
     },
     {
       id: 5,
