@@ -12,14 +12,14 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const isMobile = useIsMobile();
   
-  // Set sidebar to closed by default on mobile only
+  // Set sidebar to closed by default on mobile only, open on desktop
   useEffect(() => {
     if (isMobile) {
       setSidebarOpen(false);
     } else {
       setSidebarOpen(true); // Keep sidebar open on desktop by default
     }
-  }, [isMobile]);
+  }, [isMobile]); // Only run when isMobile changes, not on every navigation
 
   return (
     <div className="flex min-h-screen">

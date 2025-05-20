@@ -59,12 +59,12 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
         />
       )}
       
-      {/* Sidebar */}
+      {/* Sidebar - modified to always be visible but with reduced width when collapsed */}
       <aside
         className={cn(
           "fixed inset-y-0 left-0 z-50 flex flex-col bg-white border-r border-gray-200 transition-all duration-300 ease-in-out",
-          open ? "w-64 translate-x-0" : "w-0 -translate-x-full",
-          isMobile ? "" : open ? "translate-x-0" : ""
+          open ? "w-64" : isMobile ? "w-0" : "w-16",
+          open ? "translate-x-0" : isMobile ? "-translate-x-full" : "translate-x-0"
         )}
       >
         <div className="p-4 flex justify-between items-center">
@@ -91,7 +91,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
 
         {/* Navigation Links */}
         <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
-          {open && navItems.map((item) => (
+          {navItems.map((item) => (
             <Link
               key={item.name}
               to={item.path}
@@ -101,7 +101,9 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
                 variant={isCurrent(item.path) ? "secondary" : "ghost"}
                 className={cn(
                   "w-full justify-start mb-1",
-                  isCurrent(item.path) ? "bg-secondary/10 text-secondary hover:bg-secondary/20" : ""
+                  isCurrent(item.path) 
+                    ? "bg-secondary/10 text-secondary hover:bg-secondary/20" 
+                    : "hover:bg-gray-100 hover:text-secondary"
                 )}
               >
                 {item.icon}
@@ -118,15 +120,29 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
               Sign up for Pro
             </Button>
             <div className="flex space-x-2 text-xs text-gray-500 justify-center">
-              <Link to="/newsletter" className="hover:text-primary">Newsletter</Link>
+              <Link to="/newsletter" className="hover:text-secondary">Newsletter</Link>
               <span>•</span>
-              <Link to="/affiliate" className="hover:text-primary">Affiliate Program</Link>
+              <Link to="/affiliate" className="hover:text-secondary">Affiliate Program</Link>
             </div>
           </div>
         )}
         
         {open && <UserProfileFooter expanded={true} />}
       </aside>
+      
+      {/* Collapsed sidebar button to expand - only visible on desktop when sidebar is collapsed */}
+      {!open && !isMobile && (
+        <div className="fixed z-40 top-4 left-4">
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={() => setOpen(true)}
+            className="hover:bg-gray-100"
+          >
+            <ChevronLeft className="h-5 w-5 rotate-180" />
+          </Button>
+        </div>
+      )}
     </>
   );
 };
