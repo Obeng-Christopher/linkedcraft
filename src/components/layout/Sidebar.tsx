@@ -2,7 +2,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Calendar, Settings, User, Plus, FileText } from 'lucide-react';
+import { Calendar, Settings, User, Plus, FileText, ChevronLeft } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import UserProfileFooter from './UserProfileFooter';
@@ -16,7 +16,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   const location = useLocation();
   const isMobile = useIsMobile();
 
-  // Navigation items (Analytics removed)
+  // Navigation items
   const navItems = [
     {
       name: 'Generate Post',
@@ -50,50 +50,70 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   };
 
   return (
-    <div
-      className={cn(
-        "fixed inset-y-0 left-0 z-50 flex flex-col bg-white border-r border-gray-200 transition-all duration-300 ease-in-out",
-        open ? "w-64" : isMobile ? "w-0 -translate-x-full" : "w-0 md:w-16",
+    <>
+      {/* Overlay for mobile when sidebar is open */}
+      {open && isMobile && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-40"
+          onClick={() => setOpen(false)}
+        />
       )}
-    >
-      <div className="p-4">
-        <Link to="/" className="flex items-center" onClick={() => isMobile && setOpen(false)}>
-          {open ? (
-            <h1 className="text-xl font-bold brand-name">
-              Linked<span className="craft">Craft</span>
-            </h1>
-          ) : !isMobile && (
-            <h1 className="text-xl font-bold brand-name">LC</h1>
-          )}
-        </Link>
-      </div>
-
-      {/* Navigation Links */}
-      <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
-        {navItems.map((item) => (
-          <Link
-            key={item.name}
-            to={item.path}
-            onClick={() => isMobile && setOpen(false)}
-          >
-            <Button
-              variant={isCurrent(item.path) ? "secondary" : "ghost"}
-              className={cn(
-                "w-full justify-start mb-1",
-                isCurrent(item.path) ? "bg-secondary/10 text-secondary hover:bg-secondary/20" : ""
-              )}
-            >
-              {item.icon}
-              {open && <span>{item.name}</span>}
-            </Button>
+      
+      {/* Sidebar */}
+      <aside
+        className={cn(
+          "fixed inset-y-0 left-0 z-50 flex flex-col bg-white border-r border-gray-200 transition-all duration-300 ease-in-out",
+          open ? "w-64" : "w-0",
+          isMobile && open ? "translate-x-0" : isMobile && !open ? "-translate-x-full" : ""
+        )}
+      >
+        <div className="p-4 flex justify-between items-center">
+          <Link to="/" className="flex items-center" onClick={() => isMobile && setOpen(false)}>
+            {open && (
+              <h1 className="text-xl font-bold brand-name">
+                Linked<span className="text-[#2DD4BF]">Craft</span>
+              </h1>
+            )}
           </Link>
-        ))}
-      </nav>
+          
+          {/* Only show close button on desktop */}
+          {!isMobile && open && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={() => setOpen(false)} 
+              className="hover:bg-gray-100"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </Button>
+          )}
+        </div>
 
-      {/* Footer with upgrade button and user profile */}
-      <div className="p-4 border-t border-gray-200">
-        {open ? (
-          <>
+        {/* Navigation Links */}
+        <nav className="flex-1 px-2 py-4 space-y-1 overflow-y-auto">
+          {open && navItems.map((item) => (
+            <Link
+              key={item.name}
+              to={item.path}
+              onClick={() => isMobile && setOpen(false)}
+            >
+              <Button
+                variant={isCurrent(item.path) ? "secondary" : "ghost"}
+                className={cn(
+                  "w-full justify-start mb-1",
+                  isCurrent(item.path) ? "bg-secondary/10 text-secondary hover:bg-secondary/20" : ""
+                )}
+              >
+                {item.icon}
+                {open && <span>{item.name}</span>}
+              </Button>
+            </Link>
+          ))}
+        </nav>
+
+        {/* Footer with upgrade button and user profile */}
+        {open && (
+          <div className="p-4 border-t border-gray-200">
             <Button className="w-full mb-4 bg-secondary hover:bg-secondary/90 text-white">
               Sign up for Pro
             </Button>
@@ -102,16 +122,12 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
               <span>•</span>
               <Link to="/affiliate" className="hover:text-primary">Affiliate Program</Link>
             </div>
-          </>
-        ) : !isMobile && (
-          <Button size="icon" className="w-full bg-secondary hover:bg-secondary/90 text-white">
-            <Plus className="h-4 w-4" />
-          </Button>
+          </div>
         )}
-      </div>
-      
-      <UserProfileFooter expanded={open} />
-    </div>
+        
+        {open && <UserProfileFooter expanded={true} />}
+      </aside>
+    </>
   );
 };
 

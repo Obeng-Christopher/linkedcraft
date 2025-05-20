@@ -12,9 +12,9 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const isMobile = useIsMobile();
   
-  // Set sidebar to open by default on desktop and closed on mobile
+  // Set sidebar to closed by default on both mobile and desktop
   useEffect(() => {
-    setSidebarOpen(!isMobile);
+    setSidebarOpen(false);
   }, [isMobile]);
 
   return (
@@ -23,7 +23,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({ children }) => {
       <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
       
       {/* Main Content */}
-      <div className="flex flex-col flex-1">
+      <div className={`flex flex-col flex-1 ${sidebarOpen ? 'ml-64' : 'ml-0'} transition-all duration-300 ease-in-out`}>
         <Navbar onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
         <main className="flex-1 p-4 md:p-6 bg-muted overflow-y-auto">
           {children}
