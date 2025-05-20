@@ -10,7 +10,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 
 const CalendarPage = () => {
   const [currentMonth, setCurrentMonth] = useState('May 2025');
@@ -90,14 +89,6 @@ const CalendarPage = () => {
       };
     }
     
-    // Add days from next month (June 2025)
-    for (let i = 0; i < 0; i++) {
-      days[i + 35] = {
-        date: i + 1,
-        isCurrentMonth: false
-      };
-    }
-    
     return days;
   };
 
@@ -106,11 +97,11 @@ const CalendarPage = () => {
 
   return (
     <SidebarLayout>
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-semibold mb-6">Content Calendar</h1>
+      <div className="h-full flex flex-col">
+        <h1 className="text-3xl font-semibold mb-4">Content Calendar</h1>
 
         {/* Calendar Header */}
-        <div className="flex flex-wrap items-center justify-between mb-6 gap-3">
+        <div className="flex flex-wrap items-center justify-between mb-4 gap-3">
           <div className="flex items-center space-x-4">
             <Button variant="outline" size="icon">
               <ChevronLeft className="h-4 w-4" />
@@ -143,8 +134,8 @@ const CalendarPage = () => {
           </div>
         </div>
 
-        {/* Calendar Grid */}
-        <div className="bg-white rounded-md shadow overflow-hidden">
+        {/* Calendar Grid - Updated to fit available space */}
+        <div className="bg-white rounded-md shadow overflow-hidden flex-grow flex flex-col">
           {/* Week days header */}
           <div className="grid grid-cols-7 border-b">
             {weekDays.map((day, index) => (
@@ -155,11 +146,11 @@ const CalendarPage = () => {
           </div>
 
           {/* Calendar days */}
-          <div className="grid grid-cols-7 h-[800px]">
+          <div className="grid grid-cols-7 flex-grow">
             {calendar.map((day, index) => (
               <div 
                 key={index} 
-                className={`border-r border-b p-2 ${day?.isCurrentMonth ? 'bg-white' : 'bg-gray-50'}`}
+                className={`border-r border-b p-2 ${day?.isCurrentMonth ? 'bg-white' : 'bg-gray-50'} overflow-auto`}
               >
                 {day && (
                   <>

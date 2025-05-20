@@ -2,7 +2,7 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Calendar, Settings, User, PieChart, Plus, FileText } from 'lucide-react';
+import { Calendar, Settings, User, Plus, FileText } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import UserProfileFooter from './UserProfileFooter';
@@ -16,7 +16,7 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
   const location = useLocation();
   const isMobile = useIsMobile();
 
-  // Navigation items
+  // Navigation items (Analytics removed)
   const navItems = [
     {
       name: 'Generate Post',
@@ -42,11 +42,6 @@ const Sidebar: React.FC<SidebarProps> = ({ open, setOpen }) => {
       name: 'User Profile',
       path: '/profile',
       icon: <User className="h-5 w-5 mr-2" />,
-    },
-    {
-      name: 'Analytics',
-      path: '/analytics',
-      icon: <PieChart className="h-5 w-5 mr-2" />,
     },
   ];
 
