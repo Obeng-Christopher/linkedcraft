@@ -29,7 +29,8 @@ const AuthPage = () => {
     const checkUser = async () => {
       const { data } = await supabase.auth.getSession();
       if (data.session) {
-        navigate('/');
+        console.log("AuthPage: User already has session, redirecting to home");
+        navigate('/', { replace: true });
       }
     };
     checkUser();
@@ -40,33 +41,42 @@ const AuthPage = () => {
     setIsLoading(prev => ({ ...prev, signin: true }));
     
     try {
-      // Clean up existing state
+      console.log("Attempting sign in for:", email);
+      
+      // Clean up existing state to prevent conflicts
       cleanupAuthState();
       
-      // Attempt global sign out
+      // Attempt global sign out first to clear any existing sessions
       try {
         await supabase.auth.signOut({ scope: 'global' });
       } catch (err) {
         // Continue even if this fails
+        console.log("Pre-signin logout failed:", err);
       }
       
+      // Sign in with the provided credentials
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       
       if (error) {
+        console.error("Sign in error:", error);
         throw error;
       }
       
       if (data.user) {
+        console.log("Sign in successful:", data.user.email);
         toast({
           title: "Welcome back!",
           description: "You've successfully signed in.",
         });
-        navigate('/');
+        
+        // Navigate to home page with replace to prevent back button returning to login
+        navigate('/', { replace: true });
       }
     } catch (error: any) {
+      console.error("Sign in process failed:", error);
       toast({
         variant: "destructive",
         title: "Sign in failed",

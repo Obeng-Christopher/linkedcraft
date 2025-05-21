@@ -1,25 +1,37 @@
 
-// Utility functions for authentication
-
 /**
- * Cleans up all Supabase auth related items from localStorage and sessionStorage
- * to prevent authentication limbo states
+ * Cleans up all authentication state from local storage
+ * This helps prevent authentication limbo states where tokens
+ * are partially preserved or in conflict
  */
 export const cleanupAuthState = () => {
-  // Remove standard auth tokens
-  localStorage.removeItem('supabase.auth.token');
-  
-  // Remove all Supabase auth keys from localStorage
+  console.log("Cleaning up auth state");
+
+  // Identify and remove all Supabase auth-related keys
   Object.keys(localStorage).forEach((key) => {
-    if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+    if (
+      key.startsWith('sb-') || 
+      key.startsWith('supabase.auth.') ||
+      key.includes('auth') ||
+      key.includes('token')
+    ) {
+      console.log("Removing auth-related key:", key);
       localStorage.removeItem(key);
     }
   });
-  
-  // Remove from sessionStorage if in use
-  Object.keys(sessionStorage || {}).forEach((key) => {
-    if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-      sessionStorage.removeItem(key);
-    }
-  });
+
+  // Also check sessionStorage if available
+  if (window.sessionStorage) {
+    Object.keys(sessionStorage).forEach((key) => {
+      if (
+        key.startsWith('sb-') || 
+        key.startsWith('supabase.auth.') ||
+        key.includes('auth') ||
+        key.includes('token')
+      ) {
+        console.log("Removing auth-related key from sessionStorage:", key);
+        sessionStorage.removeItem(key);
+      }
+    });
+  }
 };
