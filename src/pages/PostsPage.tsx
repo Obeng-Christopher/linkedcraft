@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -37,7 +36,7 @@ import { useToast } from '@/components/ui/use-toast';
 
 interface Post {
   id: string;
-  title: string;
+  title: string | null;
   content: string;
   status: 'draft' | 'scheduled' | 'published';
   scheduled_date?: string | null;
@@ -45,6 +44,8 @@ interface Post {
   created_at: string;
   topic?: string | null;
   image_url?: string | null;
+  updated_at: string;
+  user_id: string;
 }
 
 interface PostEngagement {
@@ -84,6 +85,7 @@ const PostsPage = () => {
       const { data: posts, error } = await supabase
         .from('posts')
         .select('*')
+        .eq('user_id', user?.id)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
@@ -104,17 +106,23 @@ const PostsPage = () => {
         if (!engagementError && engagementData) {
           engagements = engagementData.reduce((acc, curr) => {
             acc[curr.post_id] = {
-              likes_count: curr.likes_count,
-              comments_count: curr.comments_count,
-              reposts_count: curr.reposts_count
+              likes_count: curr.likes_count || 0,
+              comments_count: curr.comments_count || 0,
+              reposts_count: curr.reposts_count || 0
             };
             return acc;
           }, {} as Record<string, PostEngagement>);
         }
       }
       
+      // Ensure the posts have the correct type for status
+      const typedPosts: Post[] = posts.map(post => ({
+        ...post,
+        status: post.status as 'draft' | 'scheduled' | 'published'
+      }));
+      
       // Combine posts with their engagements
-      const postsWithEngagement: PostWithEngagement[] = posts.map(post => ({
+      const postsWithEngagement: PostWithEngagement[] = typedPosts.map(post => ({
         ...post,
         engagement: engagements[post.id] || {
           likes_count: 0,
