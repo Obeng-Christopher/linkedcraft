@@ -1,257 +1,359 @@
 
-import React, { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
-import { Calendar, Eye, FileUp, RefreshCw, Upload } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import SidebarLayout from '@/components/layout/SidebarLayout';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/components/ui/use-toast';
+import { Loader2, FileUp } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+
+interface UserPreferences {
+  id: string;
+  writing_styles: string[];
+  industries: string[];
+  job_descriptions: string[];
+  content_categories: string[];
+  posting_goals: string[];
+  custom_cta?: string | null;
+  fine_tuning_notes?: string | null;
+}
+
+interface Post {
+  id: string;
+  title?: string;
+  content: string;
+  status: string;
+  topic?: string;
+  image_url?: string;
+}
 
 const GeneratePostPage = () => {
+  const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const editPostId = searchParams.get('edit');
+  
   const [topic, setTopic] = useState('');
-  const [style, setStyle] = useState('Witty');
-  const [loading, setLoading] = useState(false);
-  const [generatedContent, setGeneratedContent] = useState<string | null>(null);
+  const [generatedContent, setGeneratedContent] = useState('');
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [postTitle, setPostTitle] = useState('');
+  const [selectedStyle, setSelectedStyle] = useState<string>('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
 
-  const handleGenerate = async () => {
+  // Fetch user preferences
+  const { data: userPreferences, isLoading: isLoadingPreferences } = useQuery({
+    queryKey: ['userPreferences', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('user_preferences')
+        .select('*')
+        .eq('user_id', user?.id)
+        .maybeSingle();
+      
+      if (error) throw error;
+      
+      return data as UserPreferences | null;
+    },
+    enabled: !!user,
+  });
+
+  // Fetch post if editing
+  const { data: postData, isLoading: isLoadingPost } = useQuery({
+    queryKey: ['post', editPostId],
+    queryFn: async () => {
+      if (!editPostId) return null;
+      
+      const { data, error } = await supabase
+        .from('posts')
+        .select('*')
+        .eq('id', editPostId)
+        .single();
+      
+      if (error) throw error;
+      
+      return data as Post;
+    },
+    enabled: !!editPostId && !!user,
+  });
+
+  // Set form data if editing an existing post
+  useEffect(() => {
+    if (postData) {
+      setIsEditing(true);
+      setTopic(postData.topic || '');
+      setPostTitle(postData.title || '');
+      setGeneratedContent(postData.content || '');
+    }
+  }, [postData]);
+
+  const handleGenerateContent = async () => {
     if (!topic.trim()) {
       toast({
-        title: 'Error',
-        description: 'Please enter a topic',
-        variant: 'destructive',
+        variant: "destructive",
+        title: "Topic required",
+        description: "Please enter a topic for your LinkedIn post."
       });
       return;
     }
 
-    setLoading(true);
+    setIsGenerating(true);
     
-    // Here we'd normally call the AI API
-    // For demo purposes, let's simulate a response
-    setTimeout(() => {
-      const demoContent = generateDemoContent(topic, style);
-      setGeneratedContent(demoContent);
-      setLoading(false);
-    }, 1500);
-  };
-
-  const handleRegenerate = () => {
-    setLoading(true);
-    
-    // Simulate regeneration
-    setTimeout(() => {
-      const demoContent = generateDemoContent(topic, style);
-      setGeneratedContent(demoContent);
-      setLoading(false);
-    }, 1500);
-  };
-
-  const handleSchedule = () => {
-    if (!generatedContent) return;
-    
-    toast({
-      title: 'Success',
-      description: 'Post scheduled successfully',
-    });
-  };
-
-  // Function to generate demo content
-  const generateDemoContent = (topic: string, style: string) => {
-    let content = '';
-    
-    switch (style) {
-      case 'Witty':
-        content = `Who else is thinking about ${topic} on a Monday? 😄\n\nI've been diving into this lately and found 3 surprising insights:\n\n1️⃣ Most people overlook the fundamentals\n2️⃣ The best opportunities are hiding in plain sight\n3️⃣ Success comes from consistent small actions, not grand gestures\n\nWhat's your experience with ${topic}? Let me know in the comments! #${topic.replace(/\s+/g, '')} #ProfessionalGrowth`;
-        break;
-      case 'Professional':
-        content = `I've been researching ${topic} extensively, and I'd like to share some key findings with my network.\n\nThree critical aspects often overlooked:\n\n• Strategic implementation requires careful planning\n• Cross-functional collaboration drives better outcomes\n• Data-driven decision making significantly improves results\n\nI'd appreciate hearing your professional insights on ${topic}. What strategies have worked for you?\n\n#${topic.replace(/\s+/g, '')} #ProfessionalDevelopment`;
-        break;
-      case 'Conversational':
-        content = `Hey connections!\n\nI've been thinking about ${topic} lately. It's fascinating how much this impacts our daily work, isn't it?\n\nHere's what I've learned so far:\n- It's more nuanced than it first appears\n- There's no one-size-fits-all approach\n- The landscape is constantly evolving\n\nI'm curious: What's your take on ${topic}? Drop your thoughts below!\n\n#${topic.replace(/\s+/g, '')} #LearningTogether`;
-        break;
-      default:
-        content = `I've been exploring ${topic} recently and wanted to share some thoughts.\n\nKey takeaways:\n\n1. ${topic} is transforming how we approach business challenges\n2. The most successful professionals are adapting quickly\n3. There's still so much potential for innovation in this space\n\nWhat are your experiences with ${topic}? I'd love to hear your perspective.\n\n#${topic.replace(/\s+/g, '')} #ProfessionalInsights`;
+    try {
+      const response = await fetch(
+        `https://kjthowdyywptosrqcuxs.supabase.co/functions/v1/generate-post`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${supabase.auth.getSession()}`
+          },
+          body: JSON.stringify({
+            topic,
+            userPreferences: userPreferences || {}
+          })
+        }
+      );
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to generate content');
+      }
+      
+      setGeneratedContent(data.content);
+      setPostTitle(topic); // Set default title as the topic
+      
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Generation failed",
+        description: error.message || "Failed to generate content. Please try again."
+      });
+    } finally {
+      setIsGenerating(false);
     }
-    
-    return content;
   };
+
+  const handleSavePost = async (status: 'draft' | 'scheduled' | 'published' = 'draft') => {
+    if (!generatedContent.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Content required",
+        description: "Please generate or write content before saving."
+      });
+      return;
+    }
+
+    setIsSaving(true);
+    
+    try {
+      const postData = {
+        user_id: user?.id,
+        title: postTitle || topic,
+        content: generatedContent,
+        status,
+        topic,
+        // Include other fields like scheduled_date if status is 'scheduled'
+        // Include published_date if status is 'published'
+      };
+      
+      let response;
+      
+      if (isEditing && editPostId) {
+        // Update existing post
+        response = await supabase
+          .from('posts')
+          .update(postData)
+          .eq('id', editPostId);
+      } else {
+        // Create new post
+        response = await supabase
+          .from('posts')
+          .insert(postData);
+      }
+      
+      if (response.error) throw response.error;
+      
+      toast({
+        title: isEditing ? "Post updated" : "Post saved",
+        description: `Your post has been successfully ${isEditing ? 'updated' : 'saved'} as a ${status}.`
+      });
+      
+      // Navigate to posts list
+      navigate('/posts');
+      
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Save failed",
+        description: error.message || "Failed to save post. Please try again."
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Define writing style options
+  const writingStyles = [
+    { value: 'professional', label: 'Professional' },
+    { value: 'casual', label: 'Casual' },
+    { value: 'authoritative', label: 'Authoritative' },
+    { value: 'witty', label: 'Witty' },
+    { value: 'inspirational', label: 'Inspirational' },
+    { value: 'technical', label: 'Technical' },
+  ];
 
   return (
     <SidebarLayout>
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-semibold mb-6">Generate LinkedIn Content</h1>
+      <div className="max-w-4xl mx-auto">
+        <h1 className="text-3xl font-semibold mb-6">{isEditing ? 'Edit Post' : 'Generate LinkedIn Post'}</h1>
+        
+        <div className="grid gap-6 grid-cols-1">
+          {/* Input Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Topic & Preferences</CardTitle>
+              <CardDescription>
+                Enter your post topic and preferences to generate LinkedIn content
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="topic" className="block text-sm font-medium mb-1">
+                    What would you like to write about?
+                  </label>
+                  <Input
+                    id="topic"
+                    placeholder="e.g., AI in Healthcare, Leadership Skills, Product Launch"
+                    value={topic}
+                    onChange={(e) => setTopic(e.target.value)}
+                  />
+                </div>
+                
+                <div>
+                  <label htmlFor="style" className="block text-sm font-medium mb-1">
+                    Writing Style
+                  </label>
+                  <Select 
+                    value={selectedStyle || (userPreferences?.writing_styles?.[0] || 'professional')} 
+                    onValueChange={setSelectedStyle}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a writing style" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {writingStyles.map((style) => (
+                        <SelectItem key={style.value} value={style.value}>
+                          {style.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    For more writing preferences, go to Settings.
+                  </p>
+                </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
-          {/* Left Column - Content Generation Form */}
-          <div className="md:col-span-3">
-            <Card>
-              <CardContent className="pt-6">
-                <div className="mb-6">
-                  <h2 className="text-xl font-medium mb-4">What would you like to post?</h2>
+                <div className="flex justify-between items-center pt-2">
+                  <Button variant="outline" size="sm" className="text-sm">
+                    <FileUp className="h-4 w-4 mr-1" />
+                    Upload Reference
+                  </Button>
                   
-                  <div className="space-y-4">
-                    {/* Topic Input */}
-                    <div>
-                      <h3 className="text-sm font-medium mb-2">Your Topic</h3>
-                      <Input
-                        placeholder="Enter a topic using 5 words or more..."
-                        value={topic}
-                        onChange={(e) => setTopic(e.target.value)}
-                      />
-                    </div>
-                    
-                    {/* File Upload */}
-                    <div>
-                      <h3 className="text-sm font-medium mb-2">Attach Files</h3>
-                      <div className="border border-dashed border-gray-300 rounded-md p-8 text-center">
-                        <FileUp className="w-8 h-8 mx-auto mb-2 text-gray-400" />
-                        <p className="text-sm text-gray-500">
-                          Click or drag and drop to upload image, audio, or document
-                        </p>
-                        <Input
-                          type="file"
-                          className="hidden"
-                          id="file-upload"
-                        />
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="mt-4"
-                          onClick={() => document.getElementById('file-upload')?.click()}
-                        >
-                          <Upload className="w-4 h-4 mr-2" /> Choose File
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    {/* Post Style */}
-                    <div>
-                      <h3 className="text-sm font-medium mb-2">Post Style</h3>
-                      <Select value={style} onValueChange={setStyle}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select style" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Witty">Witty</SelectItem>
-                          <SelectItem value="Professional">Professional</SelectItem>
-                          <SelectItem value="Conversational">Conversational</SelectItem>
-                          <SelectItem value="Authoritative">Authoritative</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    {/* Generate Button */}
-                    <Button 
-                      className="w-full bg-secondary hover:bg-secondary/90"
-                      onClick={handleGenerate}
-                      disabled={loading}
-                    >
-                      {loading ? (
-                        <>
-                          <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                          Generating...
-                        </>
-                      ) : (
-                        'Generate Post'
-                      )}
-                    </Button>
-                  </div>
+                  <Button 
+                    onClick={handleGenerateContent} 
+                    className="bg-primary" 
+                    disabled={isGenerating || !topic.trim()}
+                  >
+                    {isGenerating ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      'Generate Post'
+                    )}
+                  </Button>
                 </div>
-              </CardContent>
-            </Card>
-            
-            {/* Settings Button */}
-            <div className="mt-4 text-center">
-              <Button variant="link" className="text-gray-500">
-                Adjust Settings
-              </Button>
-            </div>
-          </div>
-
-          {/* Right Column - Preview and Actions */}
-          <div className="md:col-span-2">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                  <p className="text-sm text-gray-500">0 image credits</p>
+              </div>
+            </CardContent>
+          </Card>
+          
+          {/* Content Preview */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Post Preview</CardTitle>
+              <CardDescription>
+                Preview and edit your generated LinkedIn post
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="title" className="block text-sm font-medium mb-1">
+                    Post Title (Optional)
+                  </label>
+                  <Input
+                    id="title"
+                    placeholder="Enter a title for your post"
+                    value={postTitle}
+                    onChange={(e) => setPostTitle(e.target.value)}
+                  />
                 </div>
-                <Button size="sm" variant="outline" className="text-secondary border-secondary">
-                  + Buy Image Credits
+                
+                <div>
+                  <label htmlFor="content" className="block text-sm font-medium mb-1">
+                    Content
+                  </label>
+                  <Textarea
+                    id="content"
+                    placeholder={isGenerating ? "Generating content..." : "Generated content will appear here. You can edit it after generation."}
+                    value={generatedContent}
+                    onChange={(e) => setGeneratedContent(e.target.value)}
+                    className="min-h-[200px]"
+                    disabled={isGenerating}
+                  />
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter className="flex justify-between">
+              <div className="text-xs text-gray-500">
+                {generatedContent ? `${generatedContent.length} characters` : ''}
+              </div>
+              <div className="space-x-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => handleSavePost('draft')}
+                  disabled={isSaving || !generatedContent}
+                >
+                  {isSaving ? 'Saving...' : 'Save as Draft'}
+                </Button>
+                <Button
+                  onClick={() => handleSavePost('published')}
+                  className="bg-primary"
+                  disabled={isSaving || !generatedContent}
+                >
+                  {isSaving ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Publishing...
+                    </>
+                  ) : (
+                    'Publish Now'
+                  )}
                 </Button>
               </div>
-              
-              <Card className="bg-white">
-                <CardContent className="p-4">
-                  {generatedContent ? (
-                    <div className="space-y-4">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-                          CO
-                        </div>
-                        <div>
-                          <p className="font-medium">Christopher Obeng</p>
-                          <p className="text-xs text-gray-500">2 mins ago</p>
-                        </div>
-                      </div>
-                      
-                      <div>
-                        <pre className="whitespace-pre-wrap font-sans text-sm">
-                          {generatedContent}
-                        </pre>
-                      </div>
-                      
-                      <div className="flex items-center text-gray-500 text-sm space-x-4">
-                        <div className="flex items-center">
-                          <span>1.2k likes</span>
-                        </div>
-                        <div>
-                          <span>215 comments</span>
-                        </div>
-                        <div>
-                          <span>19 reposts</span>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="h-64 flex flex-col items-center justify-center text-gray-400">
-                      <Eye className="w-12 h-12 mb-2" />
-                      <p>Preview will appear here</p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-              
-              {generatedContent && (
-                <div className="flex space-x-2">
-                  <Button 
-                    variant="outline" 
-                    className="flex-1"
-                    onClick={handleRegenerate}
-                    disabled={loading}
-                  >
-                    <RefreshCw className="w-4 h-4 mr-2" />
-                    Regenerate
-                  </Button>
-                  <Button 
-                    className="flex-1 bg-primary hover:bg-primary/90"
-                    onClick={handleSchedule}
-                  >
-                    <Calendar className="w-4 h-4 mr-2" />
-                    Schedule Post
-                  </Button>
-                </div>
-              )}
-            </div>
-          </div>
+            </CardFooter>
+          </Card>
         </div>
       </div>
     </SidebarLayout>

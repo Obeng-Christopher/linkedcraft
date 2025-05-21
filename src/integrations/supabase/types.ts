@@ -9,7 +9,218 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      post_engagements: {
+        Row: {
+          comments_count: number | null
+          id: string
+          impressions_count: number | null
+          last_updated: string
+          likes_count: number | null
+          post_id: string
+          reposts_count: number | null
+        }
+        Insert: {
+          comments_count?: number | null
+          id?: string
+          impressions_count?: number | null
+          last_updated?: string
+          likes_count?: number | null
+          post_id: string
+          reposts_count?: number | null
+        }
+        Update: {
+          comments_count?: number | null
+          id?: string
+          impressions_count?: number | null
+          last_updated?: string
+          likes_count?: number | null
+          post_id?: string
+          reposts_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_engagements_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      posts: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          image_url: string | null
+          published_date: string | null
+          scheduled_date: string | null
+          status: string
+          title: string | null
+          topic: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          published_date?: string | null
+          scheduled_date?: string | null
+          status: string
+          title?: string | null
+          topic?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          published_date?: string | null
+          scheduled_date?: string | null
+          status?: string
+          title?: string | null
+          topic?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "posts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          first_name: string | null
+          id: string
+          last_name: string | null
+          linkedin_headline: string | null
+          profile_picture_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          first_name?: string | null
+          id: string
+          last_name?: string | null
+          linkedin_headline?: string | null
+          profile_picture_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          linkedin_headline?: string | null
+          profile_picture_url?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          created_at: string
+          end_date: string | null
+          id: string
+          payment_status: string
+          plan_type: string
+          price: number
+          start_date: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          payment_status: string
+          plan_type: string
+          price: number
+          start_date?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          payment_status?: string
+          plan_type?: string
+          price?: number
+          start_date?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_preferences: {
+        Row: {
+          content_categories: string[] | null
+          created_at: string
+          custom_cta: string | null
+          fine_tuning_notes: string | null
+          id: string
+          industries: string[] | null
+          job_descriptions: string[] | null
+          posting_goals: string[] | null
+          updated_at: string
+          user_id: string
+          writing_styles: string[] | null
+        }
+        Insert: {
+          content_categories?: string[] | null
+          created_at?: string
+          custom_cta?: string | null
+          fine_tuning_notes?: string | null
+          id?: string
+          industries?: string[] | null
+          job_descriptions?: string[] | null
+          posting_goals?: string[] | null
+          updated_at?: string
+          user_id: string
+          writing_styles?: string[] | null
+        }
+        Update: {
+          content_categories?: string[] | null
+          created_at?: string
+          custom_cta?: string | null
+          fine_tuning_notes?: string | null
+          id?: string
+          industries?: string[] | null
+          job_descriptions?: string[] | null
+          posting_goals?: string[] | null
+          updated_at?: string
+          user_id?: string
+          writing_styles?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
