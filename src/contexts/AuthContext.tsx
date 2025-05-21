@@ -65,6 +65,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const fetchUserProfile = async (userId: string) => {
     try {
+      // First check if profile exists
+      const { data: profileExists, error: checkError } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', userId)
+        .single();
+
+      if (checkError || !profileExists) {
+        // Profile doesn't exist, create it using the user's metadata
+        const { data: userData } = await supabase.auth.getUser();
+        
+        if (userData?.user) {
+          const firstName = userData.user.user_metadata?.first_name || '';
+          const lastName = userData.user.user_metadata?.last_name || '';
+          
+          const { error: insertError } = await supabase
+            .from('profiles')
+            .insert({
+              id: userId,
+              first_name: firstName,
+              last_name: lastName
+            });
+            
+          if (insertError) {
+            throw insertError;
+          }
+        }
+      }
+      
+      // Now fetch the profile (either existing or newly created)
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -77,14 +107,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (data) {
         setProfile(data as Profile);
+      } else {
+        // This should not happen, but handle it just in case
+        throw new Error("Profile not found after creation attempt");
       }
     } catch (error: any) {
       console.error('Error fetching user profile:', error.message);
       toast({
         variant: "destructive",
         title: "Error loading profile",
-        description: "Failed to load profile information."
+        description: "Failed to load profile information.",
       });
+      
+      // Don't sign out, but set profile to null
+      setProfile(null);
     }
   };
 
@@ -95,6 +131,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Attempt global sign out
       await supabase.auth.signOut({ scope: 'global' });
+      
+      // Reset state
+      setUser(null);
+      setSession(null);
+      setProfile(null);
       
       // Force page reload for a clean state
       window.location.href = '/auth';
